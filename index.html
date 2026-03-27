@@ -2,277 +2,345 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZenBen2: Temporal Courtyard</title>
-    <!-- React and ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel for in-browser JSX compilation -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Zenbear: The Eternal Arcade</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; background: #000; touch-action: none; user-select: none; -webkit-user-select: none; }
-        .perspective-container { perspective: 1200px; transform-style: preserve-3d; }
-        
-        .roman-mosaic {
-            background-image: 
-                repeating-linear-gradient(45deg, #2a251a 10px, transparent 10px, transparent 30px, #2a251a 30px, #2a251a 40px),
-                repeating-linear-gradient(-45deg, #1a1510 10px, #3a3225 10px, #3a3225 30px, #1a1510 30px, #1a1510 40px);
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.95);
+        body, html { 
+            margin: 0; padding: 0; overflow: hidden; background: #010103; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            touch-action: none; -webkit-tap-highlight-color: transparent;
         }
-        
-        .ruin-overlay {
-            background: 
-                radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.85) 90%),
-                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.25"/></svg>');
-            background-blend-mode: multiply;
+        canvas { display: block; width: 100vw; height: 100vh; }
+        #ui-layer { 
+            pointer-events: none; z-index: 50; position: absolute; inset: 0; 
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between; 
+            padding: 2rem; padding-bottom: calc(2rem + env(safe-area-inset-bottom));
         }
-
-        .neon-glow {
-            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 20px rgba(255, 255, 255, 0.4));
+        .neon-bear-btn {
+            pointer-events: auto;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));
+            transition: transform 0.2s ease-out;
         }
-
-        .avatar-img { width: 120px; height: auto; object-fit: contain; filter: drop-shadow(0 0 25px rgba(255,255,255,0.15)); pointer-events: none; }
+        .neon-bear-btn:active { transform: scale(0.9); }
+        #loading { 
+            background: #000; z-index: 100; display: flex; align-items: center; justify-content: center; 
+            color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.4em; font-size: 10px; 
+        }
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef, useCallback } = React;
+    <div id="loading" class="fixed inset-0">
+        Loading Courtyard...
+    </div>
 
-        const MARBLES = [
-            { id: 'psyc', color: 'rgba(0, 50, 255, 1)', glow: 'rgba(50, 100, 255, 0.8)', heightY: -160, label: 'Psychology' },
-            { id: 'science', color: 'rgba(0, 200, 100, 1)', glow: 'rgba(50, 255, 150, 0.8)', heightY: -60, label: 'Science' },
-            { id: 'math117', color: 'rgba(255, 0, 50, 1)', glow: 'rgba(255, 50, 100, 0.8)', heightY: 20, label: 'Math 117' },
-            { id: 'math017', color: 'rgba(255, 150, 0, 1)', glow: 'rgba(255, 200, 50, 0.8)', heightY: 100, label: 'Math 017' },
-            { id: 'elective', color: 'rgba(150, 0, 255, 1)', glow: 'rgba(180, 50, 255, 0.8)', heightY: 180, label: 'Elective' },
+    <div id="ui-layer">
+        <div class="flex justify-between w-full opacity-30 text-white text-[8px] tracking-[0.2em] uppercase font-bold">
+            <div>Zenbear // Mobile V4.0</div>
+            <div id="clock">02:34 PM</div>
+        </div>
+
+        <button id="toggle-btn" class="neon-bear-btn">
+            <svg width="60" height="70" viewBox="0 0 100 120" fill="none" stroke="white" stroke-width="2.5">
+                <path d="M 25,100 L 15,100 C 10,100 10,90 10,90 C 10,65 30,55 35,50 C 35,45 25,35 35,25 C 40,20 60,20 65,25 C 75,35 65,45 65,50 C 70,55 90,65 90,90 C 90,90 90,100 85,100 L 75,100 M 35,100 L 65,100" stroke-linecap="round"/>
+                <circle cx="50" cy="35" r="14" />
+                <circle cx="38" cy="25" r="4" />
+                <circle cx="62" cy="25" r="4" />
+                <ellipse cx="50" cy="39" rx="5" ry="3" />
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        let scene, camera, renderer, clock;
+        let isFidgetMode = false;
+        let lerpFactor = 0;
+        let masterAngle = 0;
+        let ringVelocity = 0;
+        let spinDownStart = 0;
+        let startAngle = 0;
+        let targetAngle = 0;
+
+        const MARBLES_DATA = [
+            { id: 'psyc', color: 0x0044ff, emissive: 0x001144, heightY: 3.2, offset: 0 },
+            { id: 'science', color: 0x00ff88, emissive: 0x004422, heightY: 1.6, offset: 72 },
+            { id: 'math1', color: 0xff1144, emissive: 0x440011, heightY: 0, offset: 144 },
+            { id: 'math2', color: 0xaa44ff, emissive: 0x221144, heightY: -1.6, offset: 216 },
+            { id: 'elective', color: 0xffaa00, emissive: 0x442200, heightY: -3.2, offset: 288 },
         ];
 
-        function App() {
-            const [isFidgetMode, setIsFidgetMode] = useState(false);
-            const [skyState, setSkyState] = useState('night');
-            const [baseRadius, setBaseRadius] = useState(130);
-            
-            const RESTING_SPEED = 0; 
-            const FIDGET_DRIFT = 0.05; 
+        let marbleMeshes = [];
+        let dragging = null;
+        let lastTouchX = 0;
 
-            const isFidgetModeRef = useRef(isFidgetMode);
-            const prevFidgetModeRef = useRef(false);
-            const lerpRef = useRef(0);
-            const masterAngleRef = useRef(0);
-            const ringVelocityRef = useRef(RESTING_SPEED);
-            const spinDownStartRef = useRef(0);
-            const startAngleRef = useRef(0);
-            const targetAngleRef = useRef(0);
-
-            useEffect(() => { isFidgetModeRef.current = isFidgetMode; }, [isFidgetMode]);
-
-            const [orbits, setOrbits] = useState(() => 
-                MARBLES.map((m, i) => ({
-                    ...m,
-                    angle: i * 72, 
-                    targetOffset: i * 72,
-                    radius: 130, 
-                    velocity: RESTING_SPEED, 
-                    x: 0, y: 0, z: 0, scale: 1,
-                    isDragging: false
-                }))
-            );
-
-            const requestRef = useRef();
-            const draggingRef = useRef(null);
-
-            useEffect(() => {
-                const updateSize = () => setBaseRadius(Math.min(150, window.innerWidth * 0.35));
-                updateSize();
-                window.addEventListener('resize', updateSize);
-                return () => window.removeEventListener('resize', updateSize);
-            }, []);
-
-            const animate = useCallback(() => {
-                const now = performance.now();
-                const targetLerp = isFidgetModeRef.current ? 1 : 0;
-                lerpRef.current += (targetLerp - lerpRef.current) * 0.025; 
-
-                if (!isFidgetModeRef.current && prevFidgetModeRef.current) {
-                    setOrbits(currentOrbits => {
-                        const totalVelocity = currentOrbits.reduce((sum, o) => sum + (o.velocity || 0), 0);
-                        startAngleRef.current = masterAngleRef.current;
-                        const sign = totalVelocity >= 0 ? 1 : -1;
-                        const extraRotations = Math.min(Math.floor(Math.abs(totalVelocity) / 5), 4) + 1;
-                        const baseTarget = sign >= 0 
-                            ? Math.ceil(startAngleRef.current / 360) * 360 
-                            : Math.floor(startAngleRef.current / 360) * 360;
-                        targetAngleRef.current = baseTarget + (extraRotations * 360 * sign);
-                        spinDownStartRef.current = now;
-                        return currentOrbits;
-                    });
-                } else if (isFidgetModeRef.current && !prevFidgetModeRef.current) {
-                    setOrbits(currentOrbits => currentOrbits.map(o => ({ ...o, velocity: o.velocity === 0 ? FIDGET_DRIFT : o.velocity })));
-                }
-                prevFidgetModeRef.current = isFidgetModeRef.current;
-
-                if (!isFidgetModeRef.current) {
-                    const elapsed = now - spinDownStartRef.current;
-                    if (elapsed < 5000) {
-                        const easeOut = 1 - Math.pow(1 - (elapsed / 5000), 3);
-                        const newMasterAngle = startAngleRef.current + (targetAngleRef.current - startAngleRef.current) * easeOut;
-                        ringVelocityRef.current = newMasterAngle - masterAngleRef.current;
-                        masterAngleRef.current = newMasterAngle;
-                    } else {
-                        ringVelocityRef.current = RESTING_SPEED;
-                        masterAngleRef.current = targetAngleRef.current;
-                    }
-                } else {
-                    ringVelocityRef.current = RESTING_SPEED; 
-                    masterAngleRef.current = (masterAngleRef.current + ringVelocityRef.current) % 360;
-                }
-
-                setOrbits((prevOrbits) =>
-                    prevOrbits.map((orbit) => {
-                        let currentRadius = orbit.radius;
-                        let newAngle = orbit.angle;
-                        let newVelocity = orbit.velocity;
-
-                        if (isFidgetModeRef.current) {
-                            if (!orbit.isDragging) {
-                                const radiusMultiplier = Math.pow(baseRadius / Math.max(currentRadius, 30), 2);
-                                newAngle = (orbit.angle + newVelocity * radiusMultiplier) % 360;
-                            }
-                        } else {
-                            currentRadius += (baseRadius - currentRadius) * 0.025;
-                            const targetAngle = (masterAngleRef.current + orbit.targetOffset) % 360;
-                            let diff = targetAngle - orbit.angle;
-                            diff = ((diff + 540) % 360) - 180; 
-                            const springForce = diff * 0.005; 
-                            const dampingForce = (ringVelocityRef.current - newVelocity) * 0.05; 
-                            newVelocity += springForce + dampingForce;
-                            newAngle = (orbit.angle + newVelocity) % 360;
-                        }
-
-                        newAngle = (newAngle + 360) % 360;
-                        const rad = (newAngle * Math.PI) / 180;
-
-                        const fidgetX = Math.sin(rad) * currentRadius;
-                        const fidgetY = orbit.heightY;
-                        const fidgetZ = Math.cos(rad) * currentRadius;
-                        const fidgetScale = 1 + (Math.cos(rad) * 0.2); 
-
-                        const landingRadius = 140; 
-                        const landingX = Math.cos(rad - Math.PI / 2) * landingRadius;
-                        const landingY = Math.sin(rad - Math.PI / 2) * landingRadius;
-                        const landingZ = 120; 
-                        const landingScale = 1;
-
-                        const x = landingX + (fidgetX - landingX) * lerpRef.current;
-                        const y = landingY + (fidgetY - landingY) * lerpRef.current;
-                        const z = landingZ + (fidgetZ - landingZ) * lerpRef.current;
-                        const scale = landingScale + (fidgetScale - landingScale) * lerpRef.current;
-
-                        return { ...orbit, radius: currentRadius, angle: newAngle, velocity: newVelocity, x, y, z, scale };
-                    })
-                );
-                requestRef.current = requestAnimationFrame(animate);
-            }, [baseRadius]);
-
-            useEffect(() => {
-                requestRef.current = requestAnimationFrame(animate);
-                return () => cancelAnimationFrame(requestRef.current);
-            }, [animate]);
-
-            const handlePointerDownMarble = (e, index) => {
-                if (!isFidgetMode) return;
-                e.stopPropagation(); 
-                e.target.setPointerCapture(e.pointerId); 
-                draggingRef.current = { index, lastX: e.clientX, lastY: e.clientY };
-                setOrbits(prev => {
-                    const next = [...prev];
-                    next[index].isDragging = true;
-                    next[index].velocity = 0; 
-                    return next;
-                });
-            };
-
-            const handlePointerMove = (e) => {
-                if (!isFidgetMode || !draggingRef.current) return;
-                const { index, lastX } = draggingRef.current;
-                const deltaX = e.clientX - lastX;
-                setOrbits((prev) => {
-                    const newOrbits = [...prev];
-                    const orbit = newOrbits[index];
-                    const rad = orbit.angle * (Math.PI / 180);
-                    const isFront = Math.cos(rad) > 0;
-                    const directionMultiplier = isFront ? 1 : -1;
-                    orbit.angle = (orbit.angle + deltaX * directionMultiplier * 0.5) % 360;
-                    orbit.radius = Math.max(40, Math.min(window.innerWidth * 0.45, Math.abs(e.clientX - window.innerWidth / 2)));
-                    orbit.velocity = deltaX * directionMultiplier * 0.15;
-                    return newOrbits;
-                });
-                draggingRef.current.lastX = e.clientX;
-            };
-
-            const handlePointerUp = (e) => {
-                if (draggingRef.current) {
-                    const { index } = draggingRef.current;
-                    e.target.releasePointerCapture(e.pointerId);
-                    setOrbits(prev => {
-                        const next = [...prev];
-                        next[index].isDragging = false;
-                        return next;
-                    });
-                    draggingRef.current = null;
-                }
-            };
-
-            return (
-                <div className="fixed inset-0 overflow-hidden" onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>
-                    <div className="absolute inset-0 flex flex-col justify-end" style={{ background: 'linear-gradient(to bottom, #010103, #080814, #0d0d1c)' }}>
-                        <div className="absolute inset-0 opacity-60" style={{ backgroundImage: 'radial-gradient(1px 1px at 10% 20%, white, rgba(0,0,0,0)), radial-gradient(1.5px 1.5px at 80% 15%, white, rgba(0,0,0,0))', backgroundSize: '150px 150px' }} />
-                        <div className="absolute left-1/2 -translate-x-1/2 top-8 w-20 h-20 rounded-full shadow-[0_0_90px_rgba(255,255,255,0.35)]" style={{ background: 'radial-gradient(circle at 35% 35%, #fff, #d4d4d4 50%, #8a8a8a)' }} />
-                        <div className="absolute bottom-0 w-full h-[45%] bg-gradient-to-t from-[#1a1814] to-transparent opacity-80" />
-                    </div>
-
-                    <div className="absolute inset-0 perspective-container flex items-center justify-center pointer-events-none">
-                        <div className="relative w-full h-full transform-style-3d transition-transform duration-1000" style={{ transform: isFidgetMode ? 'translateZ(-500px) translateY(150px) rotateX(20deg)' : 'translateZ(-150px) translateY(120px) rotateX(35deg)' }}>
-                            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[250vw] h-[200vh] roman-mosaic">
-                                <div className="absolute inset-0 ruin-overlay" />
-                                <div className="absolute left-1/2 -translate-x-1/2 top-0 w-32 h-full bg-[#1e1a14] blur-xl opacity-70" />
-                            </div>
-                        </div>
-
-                        <div className="absolute inset-0 flex items-center justify-center transform-style-3d transition-transform duration-1000" style={{ transform: isFidgetMode ? 'scale(0.8) translateY(-40px) translateX(20px)' : 'scale(1) translateY(-40px) translateX(20px)' }}>
-                            <div className="absolute transition-all duration-1000 flex items-center justify-center" style={{ transform: 'translateZ(0px)', opacity: isFidgetMode ? 0.4 : 1 }}>
-                                <img src="Avatar.png" alt="Center Avatar" className="avatar-img" onError={(e) => { e.target.style.display='none'; e.target.parentElement.innerHTML='<div class="w-24 h-24 bg-gray-500 rounded-full animate-pulse border-4 border-white opacity-50 shadow-[0_0_20px_white]"></div>'; }} />
-                            </div>
-                            {orbits.map((orbit, index) => (
-                                <div key={orbit.id} onPointerDown={(e) => handlePointerDownMarble(e, index)} className="absolute rounded-full pointer-events-auto" style={{ width: '64px', height: '64px', cursor: isFidgetMode ? 'grab' : 'default', transform: `translate(-50%, -50%) translate3d(${orbit.x}px, ${orbit.y}px, ${orbit.z}px) scale(${orbit.scale})`, background: `radial-gradient(circle at 35% 25%, #fff 5%, ${orbit.color} 45%, #050505 95%)`, boxShadow: `0 0 25px 2px ${orbit.glow}, inset -8px -8px 20px rgba(0,0,0,0.9)`, transformStyle: 'preserve-3d', zIndex: 1000 + Math.round(orbit.z) }} />
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50">
-                        <button onClick={() => setIsFidgetMode(!isFidgetMode)} className="p-4 rounded-full transition-all duration-300 active:scale-90 hover:brightness-125 focus:outline-none">
-                            <svg width="40" height="50" viewBox="0 0 100 120" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`neon-glow transition-opacity duration-300 ${isFidgetMode ? 'opacity-50' : 'opacity-100'}`}>
-                                <path d="M 25,100 L 15,100 C 10,100 10,90 10,90 C 10,65 30,55 35,50 C 35,45 25,35 35,25 C 40,20 60,20 65,25 C 75,35 65,45 65,50 C 70,55 90,65 90,90 C 90,90 90,100 85,100 L 75,100" />
-                                <path d="M 35,100 L 65,100" /> 
-                                <circle cx="50" cy="35" r="14" /> 
-                                <circle cx="38" cy="25" r="4" /> 
-                                <circle cx="62" cy="25" r="4" /> 
-                                <ellipse cx="50" cy="39" rx="5" ry="3" /> 
-                                <path d="M 25,85 Q 30,95 40,90" />
-                                <path d="M 75,85 Q 70,95 60,90" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            );
+        // Procedural Textures
+        function createNoiseTexture(c1, c2) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = c1; ctx.fillRect(0, 0, 128, 128);
+            for(let i=0; i<300; i++) {
+                ctx.fillStyle = c2; ctx.globalAlpha = Math.random() * 0.15;
+                ctx.beginPath(); ctx.arc(Math.random()*128, Math.random()*128, Math.random()*10, 0, Math.PI*2); ctx.fill();
+            }
+            return new THREE.CanvasTexture(canvas);
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function createFloorTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#0a0908'; ctx.fillRect(0, 0, 512, 512);
+            ctx.strokeStyle = '#1a1815';
+            for(let i=0; i<512; i+=32) {
+                for(let j=0; j<512; j+=32) {
+                    ctx.strokeRect(i, j, 32, 32);
+                    if(Math.random() > 0.85) { ctx.fillStyle='#12100d'; ctx.fillRect(i+2, j+2, 28, 28); }
+                }
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(10, 10);
+            return tex;
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x010103);
+            scene.fog = new THREE.FogExp2(0x010103, 0.08);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            updateCameraPosition();
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            clock = new THREE.Clock();
+
+            // Lights
+            scene.add(new THREE.AmbientLight(0x404060, 0.25));
+            const hearth = new THREE.PointLight(0xff7722, 2, 12);
+            hearth.position.set(0, -1, 1.5);
+            hearth.castShadow = true;
+            scene.add(hearth);
+
+            const moonlight = new THREE.DirectionalLight(0xaabbff, 0.4);
+            moonlight.position.set(5, 12, -8);
+            scene.add(moonlight);
+
+            // Floor
+            const floor = new THREE.Mesh(
+                new THREE.PlaneGeometry(100, 100), 
+                new THREE.MeshStandardMaterial({ map: createFloorTexture(), roughness: 0.9 })
+            );
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = -5.8;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Axis Pedestal
+            const ped = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.6, 1.8, 1, 12),
+                new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1 })
+            );
+            ped.position.y = -5.4;
+            ped.receiveShadow = true;
+            scene.add(ped);
+
+            // Marbles
+            MARBLES_DATA.forEach(cfg => {
+                const mat = new THREE.MeshStandardMaterial({
+                    color: cfg.color, emissive: cfg.emissive, emissiveIntensity: 0.4,
+                    roughness: 0.1, metalness: 0.8, map: createNoiseTexture('#'+cfg.color.toString(16).padStart(6,'0'), '#ffffff')
+                });
+                const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.45, 32, 32), mat);
+                mesh.castShadow = true;
+                mesh.userData = { 
+                    angle: cfg.offset, targetOffset: cfg.offset, 
+                    radius: 3, heightY: cfg.heightY, 
+                    velocity: 0, isDragging: false 
+                };
+                marbleMeshes.push(mesh);
+                scene.add(mesh);
+            });
+
+            // Architecture
+            createArcade();
+
+            window.addEventListener('resize', onResize);
+            
+            // Touch Support
+            window.addEventListener('touchstart', onTouchStart, { passive: false });
+            window.addEventListener('touchmove', onTouchMove, { passive: false });
+            window.addEventListener('touchend', onTouchEnd, { passive: false });
+            
+            document.getElementById('toggle-btn').onclick = toggle;
+            document.getElementById('loading').style.display = 'none';
+
+            animate();
+        }
+
+        function createArcade() {
+            const colMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+            const left = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 30, 12), colMat);
+            left.position.set(-10, 5, 4);
+            scene.add(left);
+            const right = left.clone();
+            right.position.x = 10;
+            scene.add(right);
+
+            const arch = new THREE.Mesh(new THREE.TorusGeometry(10, 0.4, 8, 50, Math.PI), colMat);
+            arch.position.set(0, 10.5, 4);
+            scene.add(arch);
+
+            const stars = new THREE.BufferGeometry();
+            const pos = [];
+            for(let i=0; i<2500; i++) pos.push((Math.random()-0.5)*400, Math.random()*200, (Math.random()-0.5)*400);
+            stars.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+            scene.add(new THREE.Points(stars, new THREE.PointsMaterial({ color: 0x666666, size: 0.15 })));
+
+            const moonArc = new THREE.Mesh(new THREE.TorusGeometry(16, 0.05, 8, 100, Math.PI), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1 }));
+            moonArc.position.set(0, -6, -20);
+            scene.add(moonArc);
+        }
+
+        function updateCameraPosition() {
+            const aspect = window.innerWidth / window.innerHeight;
+            if (aspect < 1) { // Portrait
+                camera.position.set(0, 1.2, 16);
+                camera.fov = 65;
+            } else { // Landscape
+                camera.position.set(0, 1.2, 12);
+                camera.fov = 50;
+            }
+            camera.updateProjectionMatrix();
+        }
+
+        function toggle() {
+            isFidgetMode = !isFidgetMode;
+            if(!isFidgetMode) {
+                const totalV = marbleMeshes.reduce((s, m) => s + m.userData.velocity, 0);
+                startAngle = masterAngle;
+                const sign = totalV >= 0 ? 1 : -1;
+                const extraSpins = Math.min(Math.floor(Math.abs(totalV) / 5), 4) + 1;
+                
+                // MATH: 90 deg = TOP (12 o'clock)
+                const baseTarget = Math.round(startAngle / 360) * 360;
+                targetAngle = baseTarget + (extraSpins * 360 * sign) + 90;
+                spinDownStart = performance.now();
+            } else {
+                marbleMeshes.forEach(m => { if(m.userData.velocity === 0) m.userData.velocity = 0.05; });
+            }
+        }
+
+        function onTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const ray = new THREE.Raycaster();
+            const mouse = new THREE.Vector2((touch.clientX/window.innerWidth)*2-1, -(touch.clientY/window.innerHeight)*2+1);
+            ray.setFromCamera(mouse, camera);
+            const hits = ray.intersectObjects(marbleMeshes);
+            if(hits.length > 0 && isFidgetMode) {
+                dragging = hits[0].object;
+                dragging.userData.isDragging = true;
+                dragging.userData.velocity = 0;
+                lastTouchX = touch.clientX;
+            }
+        }
+
+        function onTouchMove(e) {
+            if(!dragging) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const dx = touch.clientX - lastTouchX;
+            const rad = dragging.userData.angle * (Math.PI / 180);
+            const dir = Math.cos(rad) > 0 ? 1 : -1;
+            
+            dragging.userData.angle = (dragging.userData.angle + dx * dir * 0.45) % 360;
+            dragging.userData.velocity = dx * dir * 0.15;
+            
+            const distFromCenter = Math.abs(touch.clientX - window.innerWidth/2);
+            dragging.userData.radius = Math.max(1.2, Math.min(6, distFromCenter / (window.innerWidth * 0.08)));
+            
+            lastTouchX = touch.clientX;
+        }
+
+        function onTouchEnd() {
+            if(dragging) {
+                dragging.userData.isDragging = false;
+                dragging = null;
+            }
+        }
+
+        function animate() {
+            const now = performance.now();
+            const tTarget = isFidgetMode ? 1 : 0;
+            lerpFactor += (tTarget - lerpFactor) * 0.025;
+
+            if(!isFidgetMode) {
+                const elapsed = now - spinDownStart;
+                if(elapsed < 5000) {
+                    const ease = 1 - Math.pow(1 - (elapsed / 5000), 3);
+                    const currentMaster = startAngle + (targetAngle - startAngle) * ease;
+                    ringVelocity = currentMaster - masterAngle;
+                    masterAngle = currentMaster;
+                } else {
+                    ringVelocity = 0;
+                    masterAngle = targetAngle;
+                }
+            }
+
+            marbleMeshes.forEach(m => {
+                const d = m.userData;
+                if(isFidgetMode) {
+                    if(!d.isDragging) {
+                        const skaterMult = Math.pow(3.0 / Math.max(d.radius, 0.5), 1.3);
+                        d.angle = (d.angle + d.velocity * skaterMult) % 360;
+                    }
+                } else {
+                    d.radius += (3.8 - d.radius) * 0.035;
+                    const slot = (masterAngle + d.targetOffset) % 360;
+                    let diff = ((slot - d.angle + 540) % 360) - 180;
+                    d.velocity += diff * 0.006 + (ringVelocity - d.velocity) * 0.06;
+                    d.angle = (d.angle + d.velocity) % 360;
+                }
+
+                const rad = (d.angle + 360) % 360 * (Math.PI / 180);
+                
+                // Interpolation
+                const fx = Math.sin(rad) * d.radius;
+                const fy = d.heightY;
+                const fz = Math.cos(rad) * d.radius;
+                const fs = 1 + Math.cos(rad) * 0.22;
+
+                const lx = Math.cos(rad) * 4.4;
+                const ly = Math.sin(rad) * 4.4;
+                const lz = 3.5;
+
+                m.position.x = lx + (fx - lx) * lerpFactor + 0.6; 
+                m.position.y = ly + (fy - ly) * lerpFactor;
+                m.position.z = lz + (fz - lz) * lerpFactor;
+                m.scale.setScalar(1 + (fs - 1) * lerpFactor);
+            });
+
+            camera.position.y = 1.2 + (isFidgetMode ? 0.8 : 0);
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+
+        function onResize() {
+            updateCameraPosition();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.onload = init;
     </script>
 </body>
 </html>
